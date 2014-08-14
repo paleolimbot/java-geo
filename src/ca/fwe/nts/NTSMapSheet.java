@@ -7,12 +7,12 @@ import ca.fwe.locations.geometry.Bounds;
 import ca.fwe.locations.geometry.LatLon;
 
 public class NTSMapSheet {
-	
+
 	public static final int SCALE_SERIES = 0 ;
 	public static final int SCALE_250K = 1 ;
 	public static final int SCALE_50K = 2 ;
 	public static final int SCALE_BLOCK = 3 ;
-	
+
 	private static final Bounds BOUNDS = new Bounds(-144, -48, 40, 88);
 	private Bounds bounds ;
 	private String ntsId ;
@@ -22,11 +22,11 @@ public class NTSMapSheet {
 	private int[] tileBlock ;
 	private String name ;
 	private int scale ;
-	
+
 	private NTSMapSheet() {
 		//no creating this by the public
 	}
-	
+
 	public Bounds getBounds() {
 		return bounds;
 	}
@@ -38,15 +38,15 @@ public class NTSMapSheet {
 	public int[] getTileBlock() {
 		return tileBlock ;
 	}
-	
+
 	public int[] getTile50() {
 		return tile50;
 	}
-	
+
 	public int[] getTile250() {
 		return tile250 ;
 	}
-	
+
 	public int[] getTileSeries() {
 		return tileSeries ;
 	}
@@ -58,7 +58,7 @@ public class NTSMapSheet {
 	public int getScale() {
 		return scale ;
 	}
-	
+
 	public int possibleSubSheets() {
 		switch(this.getScale()) {
 		case NTSMapSheet.SCALE_SERIES:
@@ -70,53 +70,57 @@ public class NTSMapSheet {
 			return 16 ;
 		case NTSMapSheet.SCALE_50K:
 			return 12 ;
-			default:
-				return 0 ;
+		default:
+			return 0 ;
 		}
 	}
-	
+
 	public boolean equals(Object other) {
 		return this.toString().equals(other.toString()) ;
 	}
-	
+
 	public String toString() {
 		return this.getNtsId() ;
 	}
-	
+
 	private static NTSMapSheet mapSheetFromTile(int scale, int[] tile) {
-		NTSMapSheet out = new NTSMapSheet() ;
-		out.ntsId = ntsStringId(scale, tile) ;
-		out.scale = scale ;
-		switch(scale) {
-		case SCALE_SERIES:
-			out.tileSeries = tile ;
-			out.bounds = boundsSeries(tile) ;
-			break ;
-		case SCALE_250K:
-			out.tile250 = tile ;
-			out.tileSeries = tileSeriesFromTile250(tile) ;
-			out.bounds = bounds250(tile) ;
-			break ;
-		case SCALE_50K:
-			out.tile50 = tile ;
-			out.tile250 = tile250FromTile50(tile) ;
-			out.tileSeries = tileSeriesFromTile250(out.tile250) ;
-			out.bounds = bounds50(tile) ;
-			break ;
-		case SCALE_BLOCK:
-			out.tileBlock = tile ;
-			out.tile50 = tile50FromTileBlock(tile) ;
-			out.tile250 = tile250FromTile50(out.tile50) ;
-			out.tileSeries = tileSeriesFromTile250(out.tile250) ;
-			out.bounds = boundsBlock(tile) ;
-			break ;
+		if(validTile(scale, tile)) {
+			NTSMapSheet out = new NTSMapSheet() ;
+			out.ntsId = ntsStringId(scale, tile) ;
+			out.scale = scale ;
+			switch(scale) {
+			case SCALE_SERIES:
+				out.tileSeries = tile ;
+				out.bounds = boundsSeries(tile) ;
+				break ;
+			case SCALE_250K:
+				out.tile250 = tile ;
+				out.tileSeries = tileSeriesFromTile250(tile) ;
+				out.bounds = bounds250(tile) ;
+				break ;
+			case SCALE_50K:
+				out.tile50 = tile ;
+				out.tile250 = tile250FromTile50(tile) ;
+				out.tileSeries = tileSeriesFromTile250(out.tile250) ;
+				out.bounds = bounds50(tile) ;
+				break ;
+			case SCALE_BLOCK:
+				out.tileBlock = tile ;
+				out.tile50 = tile50FromTileBlock(tile) ;
+				out.tile250 = tile250FromTile50(out.tile50) ;
+				out.tileSeries = tileSeriesFromTile250(out.tile250) ;
+				out.bounds = boundsBlock(tile) ;
+				break ;
 			default:
 				throw new IllegalArgumentException("Invaid scale") ;
+			}
+			out.name = null ;
+			return out ;
+		} else {
+			return null ;
 		}
-		out.name = null ;
-		return out ;
 	}
-	
+
 	public static NTSMapSheet getSheetById(String ntsId) {
 		int[] tile = tileById(ntsId) ;
 		if(tile != null) {
@@ -126,7 +130,7 @@ public class NTSMapSheet {
 			return null ;
 		}
 	}
-	
+
 	public static NTSMapSheet getSheetByLatLon(int scale, LatLon point) {
 		int[] tile = tileByLatLon(scale, point) ;
 		if(tile != null) {
@@ -135,16 +139,18 @@ public class NTSMapSheet {
 			return null ;
 		}
 	}
-	
+
 	public static List<NTSMapSheet> getSheetsByBounds(int scale, Bounds bounds) {
 		List<int[]> tiles = tilesByBounds(scale, bounds) ;
 		List<NTSMapSheet> sheets = new ArrayList<NTSMapSheet>() ;
 		for(int[] tile: tiles) {
-			sheets.add(mapSheetFromTile(scale, tile)) ;
+			NTSMapSheet sheet = mapSheetFromTile(scale, tile) ;
+			if(sheet != null)
+				sheets.add(sheet) ;
 		}
 		return sheets ;
 	}
-	
+
 	public static List<NTSMapSheet> getChildSheets(NTSMapSheet sheet) {
 		int scale = -1 ;
 		List<int[]> tiles = null ;
@@ -164,7 +170,7 @@ public class NTSMapSheet {
 		default:
 			throw new IllegalArgumentException("Sheet at given scale has no child sheets") ;
 		}
-		
+
 		List<NTSMapSheet> out = new ArrayList<NTSMapSheet>() ;
 		for(int[] tile: tiles) {
 			NTSMapSheet result = mapSheetFromTile(scale, tile) ;
@@ -173,7 +179,7 @@ public class NTSMapSheet {
 		}
 		return out ;
 	}
-	
+
 	//	__MAP_SERIES_N_OF_80 = (("910", "780", "560", "340", "120"), #Series row 10 and 11
 	//            (None, "781", "561", "341", "121"))
 
@@ -209,7 +215,7 @@ public class NTSMapSheet {
 		{"5", "6", "7", "8"},
 		{"12", "11", "10", "9"},
 		{"13", "14", "15", "16"}} ;
-	
+
 	public static final String[][] MAP_BLOCK = {	{"D", "C", "B", "A"},
 		{"E", "F", "G", "H"},
 		{"L", "K", "J", "I"}} ;
@@ -786,14 +792,14 @@ public class NTSMapSheet {
 		return outlist ;
 	}
 
-	
+
 	private static int tileBlockY(double lat) {
 		int tile50kY = tile50Y(lat) ;
 		double latDiff = lat - (tile50kY * 0.25 + 40) ;
 		int plusTilesY = (int)Math.round(Math.floor(12.0*latDiff)) ;
 		return 3 * tile50kY + plusTilesY ;
 	}
-	
+
 	private static int tileBlockX(double lon, double lat) {
 		int tile50kX = tile50X(lon, lat) ;
 		double[] wo = widthAndOffset250(lat) ;
@@ -801,11 +807,11 @@ public class NTSMapSheet {
 		int plusTilesX = (int)Math.round(Math.floor(16.0*lonDiff/wo[0])) ;
 		return 4 * tile50kX + plusTilesX ;
 	}
-	
+
 	private static int[] tileBlock(double lon, double lat) {
 		return new int[] {tileBlockX(lon, lat), tileBlockY(lon)} ;
 	}
-	
+
 	private static String[] ntsIdBlock(int[] tile) {
 		int[] tile50k = tile50FromTileBlock(tile) ;
 		int minXTile = tile50k[0] * 4 ;
@@ -815,33 +821,33 @@ public class NTSMapSheet {
 		String[] ntsId50 = ntsId50(tile50k) ;
 		return new String[] {ntsId50[0], ntsId50[1], ntsId50[2], MAP_BLOCK[plusTilesY][plusTilesX]} ;
 	}
-	
+
 	private static int[] tileBlockById(String[] ntsId) {
 		int[] tile50k = tile50ById(ntsId) ;
 		int[] xy = indexXY(ntsId[3], MAP_BLOCK) ;
 		return new int[] {tile50k[0]*4+xy[0], tile50k[1]*3+xy[1]} ;
 	}
-	
+
 	private static int[] tile50FromTileBlock(int[] tileBlock) {
 		int tileX = tileBlock[0]/4 ;
 		int tileY = tileBlock[1]/3 ;
 		return new int[] {tileX, tileY} ;
 	}
-	
+
 	private static Bounds boundsBlock(int[] tile) {
 		int[] tile50k = tile50FromTileBlock(tile) ;
 		Bounds bounds50 = bounds50(tile50k) ;
 		double width = bounds50.width() / 4 ;
 		double height = bounds50.height() / 3 ;
-		
+
 		int minXTile = tile50k[0] * 4 ;
 		int minYTile = tile50k[1] * 3 ;
 		int plusTilesX = tile[0] - minXTile ;
 		int plusTilesY = tile[1] - minYTile ;
-		
+
 		double minX = bounds50.getMinX() + (plusTilesX*width) ;
 		double minY = bounds50.getMinY() + (plusTilesY * height) ;
-		
+
 		return new Bounds(minX, minX + width, minY, minY+height) ;
 	}
 
@@ -854,10 +860,10 @@ public class NTSMapSheet {
 				outlist.add(new int[]{tileX, tileY}) ;
 			}
 		}
-		
+
 		return outlist ;
 	}
-	
+
 	//if scale == SCALE_SERIES:
 	//return __validTileSeries(tile)
 	//elif scale == SCALE_250K:
@@ -948,8 +954,8 @@ public class NTSMapSheet {
 			return ntsId50(tile) ;
 		case SCALE_BLOCK:
 			return ntsIdBlock(tile) ;
-			default:
-				throw new IllegalArgumentException("Invalid scale: " + scale) ;
+		default:
+			throw new IllegalArgumentException("Invalid scale: " + scale) ;
 		}
 	}
 
@@ -980,8 +986,8 @@ public class NTSMapSheet {
 		case SCALE_BLOCK:
 			format = "%s-%s-%s-%s" ;
 			break ;
-			default:
-				throw new IllegalArgumentException("Invalid scale: " + scale) ;
+		default:
+			throw new IllegalArgumentException("Invalid scale: " + scale) ;
 		}
 		return String.format(format, (Object[])ntsId) ;
 	}
@@ -1026,12 +1032,12 @@ public class NTSMapSheet {
 			throw new IllegalArgumentException("Invalid NTS Id") ;
 		}
 	}
-	
+
 	private static int[] tileById(String ntsStringId) {
 		String[] ntsId = ntsStringId.split("-") ;
 		int scale = -1 ;
 		int[] tile = null ;
-		
+
 		if(ntsId.length == 1) {
 			scale = SCALE_SERIES ;
 			tile = tileSeriesById(ntsId[0]) ;
@@ -1075,8 +1081,8 @@ public class NTSMapSheet {
 			return tile50X(x, y) ;
 		case SCALE_BLOCK:
 			return tileBlockX(x, y) ;
-			default:
-				throw new IllegalArgumentException("No such scale constant: " + scale) ;
+		default:
+			throw new IllegalArgumentException("No such scale constant: " + scale) ;
 		}
 	}
 
@@ -1100,8 +1106,8 @@ public class NTSMapSheet {
 			return tile50Y(y) ;
 		case SCALE_BLOCK:
 			return tileBlockY(y) ;
-			default:
-				throw new IllegalArgumentException("No such scale constant: " + scale) ;
+		default:
+			throw new IllegalArgumentException("No such scale constant: " + scale) ;
 		}
 	}
 
@@ -1184,7 +1190,7 @@ public class NTSMapSheet {
 
 		double tempmaxy = maxy ;
 		double tempminy = miny ;
-		
+
 		if(containsAbove68) {
 			if(containsAbove80) {
 				tempmaxy = 79.99 ;
@@ -1192,17 +1198,17 @@ public class NTSMapSheet {
 			if(containsBelow68) {
 				tempminy = 68.0 ;
 			}
-			
+
 			loadTiles(scale, minx, tempminy, maxx, tempmaxy, tiles) ;
 		}
-		
+
 		if (containsBelow68) {
 			tempmaxy = maxy ;
 			if (containsAbove68)
 				tempmaxy = 67.99 ;
 			loadTiles(scale, minx, miny, maxx, tempmaxy, tiles) ;
 		}
-		
+
 		return tiles ;
 
 	}

@@ -3,19 +3,20 @@ package ca.fwe.locations.kml;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 public class KMLEncloser extends Placemark {
 	private String tagName ;
-	private ArrayList<Placemark> contents ;
+	private List<Placemark> contents ;
 	
 	public KMLEncloser(String tagName) {
 		this.tagName = tagName ;
 		contents = new ArrayList<Placemark>() ;
 	}
 	
-	public KMLEncloser(String tagName, String name, String description, ArrayList<Placemark> contents) {
+	public KMLEncloser(String tagName, String name, String description, List<Placemark> wpts) {
 		super(name, description);
-		this.contents = contents ;
+		this.contents = wpts ;
 		this.tagName = tagName ;
 	}
 	

@@ -1,6 +1,8 @@
 package ca.fwe.locations.kml;
 
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -32,4 +34,10 @@ public class KMLDocument extends KMLEncloser {
 		w.close() ;
 	}
 
+	public void writeFile(File f) throws IOException {
+		BufferedWriter w = new BufferedWriter(new FileWriter(f)) ;
+		this.write(w);
+		w.close();
+	}
+	
 }

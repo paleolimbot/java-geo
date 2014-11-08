@@ -550,7 +550,14 @@ public class NTSMapSheet {
 		int xTileInSeries = tile250k[0]-seriesMinXTile ;
 
 		String areaLetter = null ;
-
+		
+		//TODO this is a diagnostic update so when crashes happen in the future, diagnostic info will be passed on with the crash report
+		if(yTileInSeries < 0) {
+			throw new ArrayIndexOutOfBoundsException("yTileInSeries < 0: seriesId" + seriesId + " tile250X:" + tile250k[0] + " tile250Y: " + tile250k[1]) ;
+		} else if(xTileInSeries < 0) {
+			throw new ArrayIndexOutOfBoundsException("xTileInSeries < 0: seriesId" + seriesId + " tile250X:" + tile250k[0] + " tile250Y: " + tile250k[1]) ;
+		}
+		
 		if(tileS[1] >= 7) {
 			areaLetter = MAP_250K_N_OF_68[yTileInSeries][xTileInSeries] ;	
 		} else {
